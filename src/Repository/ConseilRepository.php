@@ -23,12 +23,25 @@ class ConseilRepository extends ServiceEntityRepository
      */
     public function findByMonth(int $mois): array
     {
-        return array_values(
-            array_filter(
-                $this->findAll(),
-                fn(Conseil $c) => in_array($mois, $c->getMois(), true)
+        // JSON_CONTAINS est une fonction SQL native (MariaDB/MySQL) non supportée en DQL.
+        // On passe par la connexion DBAL pour récupérer les IDs, puis on charge les entités via l'ORM.
+        $ids = $this->getEntityManager()
+            ->getConnection()
+            ->executeQuery(
+                'SELECT id FROM conseil WHERE JSON_CONTAINS(mois, :mois)',
+                ['mois' => json_encode($mois)]
             )
-        );
+            ->fetchFirstColumn();
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
     }
 
 

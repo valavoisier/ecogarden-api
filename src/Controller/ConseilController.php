@@ -8,10 +8,14 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException; 
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException; 
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-final class ConseilController extends AbstractController
 
+final class ConseilController extends AbstractController
 {
     /**
      * Cette méthode permet de récupérer l'ensemble des conseils 
@@ -27,16 +31,14 @@ final class ConseilController extends AbstractController
     /** 
      *  Cette méthode permet de récupérer les conseils d’un mois donné (1–12) 
      */ 
-    #[Route('/api/conseil/{mois}', name: 'conseil_by_month', methods: ['GET'])] 
+    #[Route('/api/conseil/{mois}', name: 'conseil_by_month', methods: ['GET'], requirements: ['mois' => '[1-9]|1[0-2]'])] 
     public function getConseilsByMonth(int $mois, ConseilRepository $conseilRepository): JsonResponse 
     { 
-        // Vérification du mois 
+        /* Vérification du mois non atteinte avec requierments, mais on peut faire une vérification supplémentaire pour être sûr :
         if ($mois < 1 || $mois > 12) { 
-            return $this->json( 
-                ['error' => 'Le mois doit être compris entre 1 et 12.'], 
-                400 
-            ); 
-        } // Récupération des conseils
+            throw new BadRequestHttpException('Le mois doit être compris entre 1 et 12.');// error 400
+        } */
+        // Récupération des conseils
         $conseils = $conseilRepository->findByMonth($mois); 
         return $this->json($conseils); 
     }
@@ -52,8 +54,8 @@ final class ConseilController extends AbstractController
         ): JsonResponse { 
         // Récupération du JSON envoyé par le client 
         $data = json_decode($request->getContent(), true); 
-        if (!$data) { 
-            return $this->json(['error' => 'JSON invalide'], 400); 
+        if ($data === null) { 
+            throw new BadRequestHttpException('JSON invalide.'); // error 400
         } 
         // Création de l'entité 
         $conseil = new Conseil(); 
@@ -67,7 +69,7 @@ final class ConseilController extends AbstractController
             foreach ($errors as $error) { 
                 $messages[$error->getPropertyPath()] = $error->getMessage(); 
             } 
-            return $this->json($messages, 400); 
+            throw new UnprocessableEntityHttpException(json_encode($messages));// error 422
         }
 
         // Sauvegarde en base 
@@ -80,7 +82,7 @@ final class ConseilController extends AbstractController
     /**
      * Cette méthode permet de mettre à jour un conseil existant
      */
-    #[Route('/api/conseil/{id}', name: 'conseil_update', methods: ['PUT'])]
+    #[Route('/api/conseil/{id}', name: 'conseil_update', methods: ['PUT'], requirements: ['id' => '\d+'])]
     public function updateConseil(
         int $id,
         Request $request,
@@ -92,14 +94,14 @@ final class ConseilController extends AbstractController
         $conseil = $conseilRepository->find($id);
 
         if (!$conseil) {
-            return $this->json(['error' => 'Conseil non trouvé'], 404);
+            throw new NotFoundHttpException('Conseil non trouvé.');// error 404
         }
 
         // Récupération du JSON envoyé
         $data = json_decode($request->getContent(), true);
 
-        if (!$data) {
-            return $this->json(['error' => 'JSON invalide'], 400);
+        if ($data === null) {
+            throw new BadRequestHttpException('JSON invalide.');// error 400
         }
 
         // Mise à jour des champs
@@ -114,7 +116,7 @@ final class ConseilController extends AbstractController
             foreach ($errors as $error) {
                 $messages[$error->getPropertyPath()] = $error->getMessage();
             }
-            return $this->json($messages, 400);
+            throw new UnprocessableEntityHttpException(json_encode($messages));// error 422
         }
 
         // Sauvegarde
@@ -126,7 +128,7 @@ final class ConseilController extends AbstractController
     /**
      * Cette méthode permet de supprimer un conseil existant
      */
-    #[Route('/api/conseil/{id}', name: 'conseil_delete', methods: ['DELETE'])]
+    #[Route('/api/conseil/{id}', name: 'conseil_delete', methods: ['DELETE'], requirements: ['id' => '\d+'])]
     public function deleteConseil(
         int $id,
         ConseilRepository $conseilRepository,
@@ -135,16 +137,12 @@ final class ConseilController extends AbstractController
         $conseil = $conseilRepository->find($id);
 
         if (!$conseil) {
-            return $this->json(['error' => 'Conseil non trouvé'], 404);
+            throw new NotFoundHttpException('Conseil non trouvé.');// error 404
         }
 
         $entityManager->remove($conseil);
         $entityManager->flush();
 
-        return $this->json(['message' => 'Conseil supprimé'], 200);
-    }
-
-
-
-    
+        return new Response(null, 204);
+    }    
 }
