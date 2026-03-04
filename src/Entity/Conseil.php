@@ -17,7 +17,7 @@ class Conseil
     #[ORM\Column(type: Types::TEXT)]
     private ?string $contenu = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'json')]
     private array $mois = [];
 
     public function getId(): ?int

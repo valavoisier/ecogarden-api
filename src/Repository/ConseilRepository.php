@@ -16,6 +16,22 @@ class ConseilRepository extends ServiceEntityRepository
         parent::__construct($registry, Conseil::class);
     }
 
+    /**
+     * Récupère les conseils d’un mois donné (1–12)
+     * @param int $mois
+     * @return Conseil[]
+     */
+    public function findByMonth(int $mois): array
+    {
+        return array_values(
+            array_filter(
+                $this->findAll(),
+                fn(Conseil $c) => in_array($mois, $c->getMois(), true)
+            )
+        );
+    }
+
+
     //    /**
     //     * @return Conseil[] Returns an array of Conseil objects
     //     */
