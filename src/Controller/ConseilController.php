@@ -119,6 +119,28 @@ final class ConseilController extends AbstractController
         return $this->json($conseil, 200);
     }
 
+    /**
+     * Cette méthode permet de supprimer un conseil existant
+     */
+    #[Route('/api/conseil/{id}', name: 'conseil_delete', methods: ['DELETE'])]
+    public function deleteConseil(
+        int $id,
+        ConseilRepository $conseilRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        $conseil = $conseilRepository->find($id);
+
+        if (!$conseil) {
+            return $this->json(['error' => 'Conseil non trouvé'], 404);
+        }
+
+        $em->remove($conseil);
+        $em->flush();
+
+        return $this->json(['message' => 'Conseil supprimé'], 200);
+    }
+
+
 
     
 }
