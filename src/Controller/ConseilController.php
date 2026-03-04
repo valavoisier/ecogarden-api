@@ -2,10 +2,14 @@
 
 namespace App\Controller;
 
+use App\Entity\Conseil;
 use App\Repository\ConseilRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 final class ConseilController extends AbstractController
 
 {/**
@@ -35,6 +39,36 @@ final class ConseilController extends AbstractController
         $conseils = $conseilRepository->findByMonth($mois); 
         return $this->json($conseils); 
     }
+
+    /** * Crée un nouveau conseil via JSON */ 
+    #[Route('/api/conseils', name: 'conseil_create', methods: ['POST'])] 
+    public function createConseil( Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator ): JsonResponse { 
+        // Récupération du JSON envoyé par le client 
+        $data = json_decode($request->getContent(), true); 
+        if (!$data) { 
+            return $this->json(['error' => 'JSON invalide'], 400); 
+        } 
+        // Création de l'entité 
+        $conseil = new Conseil(); 
+        $conseil->setContenu($data['contenu'] ?? '');
+        $conseil->setMois($data['mois'] ?? []); 
+        // Validation 
+        $errors = $validator->validate($conseil); 
+
+        if (count($errors) > 0) { 
+            $messages = []; 
+            foreach ($errors as $error) { 
+                $messages[$error->getPropertyPath()] = $error->getMessage(); 
+            } 
+            return $this->json($messages, 400); 
+        }
+
+        // Sauvegarde en base 
+        $entityManager->persist($conseil); 
+        $entityManager->flush(); 
+        
+        // Retourne l'objet créé avec un statut 201 
+        return $this->json($conseil, 201); }
 
     
 }
