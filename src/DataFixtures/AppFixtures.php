@@ -24,7 +24,7 @@ class AppFixtures extends Fixture
         $user->setEmail('user@ecogarden.com'); 
         $user->setRoles(['ROLE_USER']); 
         $user->setCity('Paris'); 
-        $hashedPassword = $this->passwordHasher->hashPassword($user, 'password'); 
+        $hashedPassword = $this->passwordHasher->hashPassword($user, 'User123!'); 
         $user->setPassword($hashedPassword); 
         $manager->persist($user);
 
@@ -33,7 +33,7 @@ class AppFixtures extends Fixture
         $userAdmin->setEmail('admin@ecogarden.com'); 
         $userAdmin->setRoles(['ROLE_ADMIN']); 
         $userAdmin->setCity('Laon'); 
-        $hashedPassword = $this->passwordHasher->hashPassword($userAdmin, 'password'); 
+        $hashedPassword = $this->passwordHasher->hashPassword($userAdmin, 'Admin123!'); 
         $userAdmin->setPassword($hashedPassword); 
         $manager->persist($userAdmin);
 

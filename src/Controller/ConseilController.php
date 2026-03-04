@@ -45,7 +45,11 @@ final class ConseilController extends AbstractController
      *  Cette méthode permet de créer un nouveau conseil 
      */ 
     #[Route('/api/conseil', name: 'conseil_create', methods: ['POST'])] 
-    public function createConseil( Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator ): JsonResponse { 
+    public function createConseil( 
+        Request $request, 
+        EntityManagerInterface $entityManager, 
+        ValidatorInterface $validator 
+        ): JsonResponse { 
         // Récupération du JSON envoyé par le client 
         $data = json_decode($request->getContent(), true); 
         if (!$data) { 
@@ -126,7 +130,7 @@ final class ConseilController extends AbstractController
     public function deleteConseil(
         int $id,
         ConseilRepository $conseilRepository,
-        EntityManagerInterface $em
+        EntityManagerInterface $entityManager
     ): JsonResponse {
         $conseil = $conseilRepository->find($id);
 
@@ -134,8 +138,8 @@ final class ConseilController extends AbstractController
             return $this->json(['error' => 'Conseil non trouvé'], 404);
         }
 
-        $em->remove($conseil);
-        $em->flush();
+        $entityManager->remove($conseil);
+        $entityManager->flush();
 
         return $this->json(['message' => 'Conseil supprimé'], 200);
     }
