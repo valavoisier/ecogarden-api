@@ -58,7 +58,7 @@ final class ConseilController extends AbstractController
      *  Cette méthode permet de créer un nouveau conseil 
      */ 
     #[Route('/api/conseil', name: 'conseil_create', methods: ['POST'])]
-    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un livre')]     
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un conseil')]     
     public function createConseil( 
         Request $request, 
         EntityManagerInterface $entityManager, 
