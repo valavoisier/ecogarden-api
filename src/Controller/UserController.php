@@ -14,6 +14,9 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class UserController extends AbstractController
 {
+    /**
+     * Cette méthode permet de créer un nouveau compte utilisateur
+     */
     #[Route('/api/user', name: 'user_create', methods: ['POST'])]
     public function createUser(
         Request $request,
@@ -52,5 +55,17 @@ final class UserController extends AbstractController
         $entityManager->flush();
 
         return $this->json(['message' => 'Utilisateur créé avec succès.'], Response::HTTP_CREATED);
+    }
+
+    /**
+     * Cette méthode permet d'authentifier un utilisateur et de lui fournir un token JWT pour les requêtes futures.
+     * L'authentification est gérée par le firewall LexikJWT(gère vérification du mot de passe, génération du token, réponse JSON) — cette route ne sera jamais exécutée directement.
+     * Corps de la requête attendu : { "email": "...", "password": "..." }
+     * Réponse en cas de succès : { "token": "..." }
+     */
+    #[Route('/api/auth', name: 'user_auth', methods: ['POST'])]
+    public function authUser(): never
+    {
+        throw new \LogicException('Cette route est interceptée par le firewall LexikJWT.');
     }
 }
