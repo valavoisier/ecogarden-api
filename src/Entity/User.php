@@ -20,8 +20,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Assert\NotBlank(message: "L'email est obligatoire.")]
-    #[Assert\Email(message: "L'email {{ value }} n'est pas valide.")]
+    #[Assert\Sequentially([
+        new Assert\NotBlank(message: "L'email est obligatoire."),
+        new Assert\Email(message: "L'email n'est pas valide."),
+    ])]
     private ?string $email = null;
 
     /**
@@ -30,21 +32,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private array $roles = [];
 
-    /**
-     * @var string The hashed password
-     */
     #[ORM\Column]
-    #[Assert\NotBlank(message: 'Le mot de passe est obligatoire.')] 
-    #[Assert\Length(min: 8, minMessage: 'Le mot de passe doit contenir au moins 8 caractères.')] 
-    #[Assert\Regex( 
-        pattern: '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/', 
-        message: 'Le mot de passe doit contenir une majuscule, une minuscule, un chiffre et un caractère spécial..' 
-    )]
+    #[Assert\Sequentially([
+        new Assert\NotBlank(message: 'Le mot de passe est obligatoire.'),
+        new Assert\Length(min: 8, minMessage: 'Le mot de passe doit contenir au moins 8 caractères.'),
+        new Assert\Regex(
+            pattern: '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/',
+            message: 'Le mot de passe doit contenir une majuscule, une minuscule, un chiffre et un caractère spécial.'
+        ),
+    ])]
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: 'La ville est obligatoire.')]
-    #[Assert\Length(min: 2, max: 255)]
+    #[Assert\Sequentially([
+        new Assert\NotBlank(message: 'La ville est obligatoire.'),
+        new Assert\Length(
+            min: 2,
+            minMessage: 'La ville doit contenir au moins 2 caractères.',
+            max: 255,
+            maxMessage: 'La ville ne peut pas dépasser 255 caractères.'
+        ),
+    ])]
     private ?string $city = null;
 
     public function getId(): ?int
@@ -57,7 +65,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->email;
     }
 
-    public function setEmail(string $email): static
+    public function setEmail(?string $email): static
     {
         $this->email = $email;
 
@@ -133,7 +141,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->city;
     }
 
-    public function setCity(string $city): static
+    public function setCity(?string $city): static
     {
         $this->city = $city;
 
