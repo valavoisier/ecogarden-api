@@ -13,6 +13,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException; 
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class ConseilController extends AbstractController
@@ -44,9 +45,20 @@ final class ConseilController extends AbstractController
     }
 
     /** 
+     *  Cette méthode permet de récupérer les conseils du mois en cours
+     */ 
+    #[Route('/api/conseil/current', name: 'conseil_current_month', methods: ['GET'])] 
+    public function getConseilsCurrentMonth(ConseilRepository $conseilRepository): JsonResponse 
+    { 
+        $conseils = $conseilRepository->findByMonth((int) date('n'));
+        return $this->json($conseils);
+    }
+
+    /** 
      *  Cette méthode permet de créer un nouveau conseil 
      */ 
-    #[Route('/api/conseil', name: 'conseil_create', methods: ['POST'])] 
+    #[Route('/api/conseil', name: 'conseil_create', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un livre')]     
     public function createConseil( 
         Request $request, 
         EntityManagerInterface $entityManager, 
@@ -81,8 +93,9 @@ final class ConseilController extends AbstractController
 
     /**
      * Cette méthode permet de mettre à jour un conseil existant
-     */
+     */    
     #[Route('/api/conseil/{id}', name: 'conseil_update', methods: ['PUT'], requirements: ['id' => '\d+'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour mettre à jour un conseil')]
     public function updateConseil(
         int $id,
         Request $request,
@@ -129,6 +142,7 @@ final class ConseilController extends AbstractController
      * Cette méthode permet de supprimer un conseil existant
      */
     #[Route('/api/conseil/{id}', name: 'conseil_delete', methods: ['DELETE'], requirements: ['id' => '\d+'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour supprimer un conseil')]
     public function deleteConseil(
         int $id,
         ConseilRepository $conseilRepository,
