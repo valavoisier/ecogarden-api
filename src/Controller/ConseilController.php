@@ -89,7 +89,8 @@ final class ConseilController extends AbstractController
         $entityManager->flush(); 
 
         // Retourne l'objet créé avec un statut 201 
-        return $this->json($conseil, 201); }
+        return $this->json($conseil, Response::HTTP_CREATED);
+    }
 
     /**
      * Cette méthode permet de mettre à jour un conseil existant
@@ -135,7 +136,7 @@ final class ConseilController extends AbstractController
         // Sauvegarde
         $em->flush();
 
-        return $this->json($conseil, 200);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
     /**
@@ -157,6 +158,6 @@ final class ConseilController extends AbstractController
         $entityManager->remove($conseil);
         $entityManager->flush();
 
-        return new Response(null, 204);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }    
 }
