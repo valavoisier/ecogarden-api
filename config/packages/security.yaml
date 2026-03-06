@@ -44,6 +44,7 @@ security:
         - { path: ^/api/auth, roles: PUBLIC_ACCESS }
         - { path: ^/api/user, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/user, roles: ROLE_ADMIN, methods: [PUT, DELETE] }
+        - { path: ^/api/meteo, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
