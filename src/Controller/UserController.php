@@ -16,6 +16,29 @@ final class UserController extends AbstractController
 {
     /**
      * Cette méthode permet de créer un nouveau compte utilisateur
+     * *
+     * Méthode : POST  
+     * URL     : /api/user  
+     * Accès   : Public
+     *
+     * Exemple de requête :
+     * {
+     *   "email": "user@example.com",
+     *   "password": "MotDePasse1!",
+     *   "city": "Paris"
+     * }
+     *
+     * Exemple de réponse :
+     * {
+     *   "message": "Utilisateur créé avec succès."
+     * }
+     *
+     * Codes de réponse :
+     * - 201 : Utilisateur créé
+     * - 400 : JSON invalide
+     * - 422 : Erreurs de validation
+     *
+     * @return JsonResponse
      */
     #[Route('/api/user', name: 'user_create', methods: ['POST'])]
     public function createUser(
@@ -57,11 +80,31 @@ final class UserController extends AbstractController
         return $this->json(['message' => 'Utilisateur créé avec succès.'], Response::HTTP_CREATED);
     }
 
-    /**
+    /**     
      * Cette méthode permet d'authentifier un utilisateur et de lui fournir un token JWT pour les requêtes futures.
-     * L'authentification est gérée par le firewall LexikJWT(gère vérification du mot de passe, génération du token, réponse JSON) — cette route ne sera jamais exécutée directement.
-     * Corps de la requête attendu : { "email": "...", "password": "..." }
-     * Réponse en cas de succès : { "token": "..." }
+     * Attention! Cette méthode n'est jamais exécutée directement.
+     * Elle est interceptée par le firewall LexikJWT qui :
+     * - vérifie les identifiants,
+     * - génère le token,
+     * - renvoie la réponse JSON.
+     *
+     * Méthode : POST  
+     * URL     : /api/auth  
+     * Accès   : Public
+     *
+     * Exemple de requête :
+     * {
+     *   "email": "user@example.com",
+     *   "password": "MotDePasse1!"
+     * }
+     *
+     * Exemple de réponse succés :
+     * {
+     *   "token": "eyJhbGciOi..."
+     * }
+     *
+     * @return never
+     
      */
     #[Route('/api/auth', name: 'user_auth', methods: ['POST'])]
     public function authUser(): never
@@ -73,8 +116,31 @@ final class UserController extends AbstractController
 
     /**
      * Cette méthode permet de mettre à jour un compte utilisateur existant.
-     * Corps de la requête attendu : { "email": "...", "password": "...", "city": "..." }
-     * Réponse en cas de succès : { "message": "Utilisateur mis à jour avec succès." }
+     *
+     * Méthode : PUT  
+     * URL     : /api/user/{id}  
+     * Accès   : ROLE_ADMIN
+     *
+     * Exemple de requête :
+     * {
+     *   "email": "nouveau@example.com",
+     *   "password": "NouveauMdp1!",
+     *   "city": "Lyon"
+     * }
+     *
+     * Exemple de réponse :
+     * {
+     *   "message": "Utilisateur mis à jour avec succès."
+     * }
+     *
+     * Codes de réponse :
+     * - 200 : Mise à jour réussie
+     * - 400 : JSON invalide
+     * - 404 : Utilisateur non trouvé
+     * - 422 : Erreurs de validation
+     *
+     * @param int $id
+     * @return JsonResponse
      */
     #[Route('/api/user/{id}', name: 'user_update', methods: ['PUT'])]
     public function updateUser(
@@ -136,7 +202,22 @@ final class UserController extends AbstractController
 
     /**
      * Cette méthode permet de supprimer un compte utilisateur existant.
-     * Réponse en cas de succès : { "message": "Utilisateur supprimé avec succès." }
+     * 
+     * Méthode : DELETE  
+     * URL     : /api/user/{id}  
+     * Accès   : ROLE_ADMIN
+     *
+     * Exemple de réponse :
+     * {
+     *   "message": "Utilisateur supprimé avec succès."
+     * }
+     *
+     * Codes de réponse :
+     * - 200 : Suppression réussie
+     * - 404 : Utilisateur non trouvé
+     *
+     * @param int $id
+     * @return JsonResponse
      */
     #[Route('/api/user/{id}', name: 'user_delete', methods: ['DELETE'])]
     public function deleteUser(
