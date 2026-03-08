@@ -19,7 +19,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 final class ConseilController extends AbstractController
 {
     /**
-     * Cette méthode permet de récupérer l'ensemble des conseils de jardinage
+     * Cette méthode permet de récupérer l'ensemble des conseils de jardinage (route non demandée dans spécifications techniques, elle est optionnelle!)
      *  *
      * Méthode : GET  
      * URL     : /api/conseils  
@@ -37,11 +37,23 @@ final class ConseilController extends AbstractController
      * @return JsonResponse 
      */
     #[Route('/api/conseils', name: 'conseil', methods: ['GET'])]
-    public function getAllConseils(ConseilRepository $conseilRepository): JsonResponse
+    public function getAllConseils(ConseilRepository $conseilRepository, Request $request): JsonResponse
     {
-        $conseils = $conseilRepository->findAll();
-        //utilisation automatique du serializer (installation du symfony/serializer-pack) pour convertir les objets en JSON
-        return $this->json($conseils);
+        $page  = $request->query->getInt('page', 1);
+        $limit = $request->query->getInt('limit', 10);
+
+        $conseils = $conseilRepository->findAllPaginated($page, $limit);
+        $total    = $conseilRepository->countAll();
+
+        return $this->json([
+            'data'       => $conseils,
+            'pagination' => [
+                'page'  => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'pages' => (int) ceil($total / $limit),
+            ],
+        ]);
     }
 
     /** 
@@ -60,15 +72,23 @@ final class ConseilController extends AbstractController
      * @return JsonResponse 
      */ 
     #[Route('/api/conseil/{mois}', name: 'conseil_by_month', methods: ['GET'], requirements: ['mois' => '[1-9]|1[0-2]'])] 
-    public function getConseilsByMonth(int $mois, ConseilRepository $conseilRepository): JsonResponse 
+    public function getConseilsByMonth(int $mois, ConseilRepository $conseilRepository, Request $request): JsonResponse 
     { 
-        /* Vérification du mois non atteinte avec requierments, mais si on veut faire une vérification supplémentaire pour être sûr :
-        if ($mois < 1 || $mois > 12) { 
-            throw new BadRequestHttpException('Le mois doit être compris entre 1 et 12.');// error 400
-        } */
-        // Récupération des conseils
-        $conseils = $conseilRepository->findByMonth($mois); 
-        return $this->json($conseils); 
+        $page  = $request->query->getInt('page', 1);
+        $limit = $request->query->getInt('limit', 10);
+
+        $conseils = $conseilRepository->findByMonthPaginated($mois, $page, $limit);
+        $total    = $conseilRepository->countByMonth($mois);
+
+        return $this->json([
+            'data'       => $conseils,
+            'pagination' => [
+                'page'  => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'pages' => (int) ceil($total / $limit),
+            ],
+        ]);
     }
 
     /** 
@@ -83,11 +103,25 @@ final class ConseilController extends AbstractController
      *
      * @return JsonResponse 
      */ 
-    #[Route('/api/conseil/current', name: 'conseil_current_month', methods: ['GET'])] 
-    public function getConseilsCurrentMonth(ConseilRepository $conseilRepository): JsonResponse 
+    #[Route('/api/conseil', name: 'conseil_current_month', methods: ['GET'])] 
+    public function getConseilsCurrentMonth(ConseilRepository $conseilRepository, Request $request): JsonResponse 
     { 
-        $conseils = $conseilRepository->findByMonth((int) date('n'));
-        return $this->json($conseils);
+        $mois  = (int) date('n');
+        $page  = $request->query->getInt('page', 1);
+        $limit = $request->query->getInt('limit', 10);
+
+        $conseils = $conseilRepository->findByMonthPaginated($mois, $page, $limit);
+        $total    = $conseilRepository->countByMonth($mois);
+
+        return $this->json([
+            'data'       => $conseils,
+            'pagination' => [
+                'page'  => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'pages' => (int) ceil($total / $limit),
+            ],
+        ]);
     }
 
     /** 

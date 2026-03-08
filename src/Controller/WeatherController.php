@@ -51,7 +51,7 @@ final class WeatherController extends AbstractController
      */
     #[Route('/meteo/{city}', name: 'api_meteo_city', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function getMeteoForCity(string $city): JsonResponse
+    public function getMeteoForCity(?string $city): JsonResponse
     {
         try {
             $meteo = $this->openMeteo->getMeteo($city);
@@ -103,7 +103,8 @@ final class WeatherController extends AbstractController
      * - 404 : Ville introuvable
      * - 500 : Erreur interne (API Open‑Meteo)
      *
-     * @return JsonResponse     */
+     * @return JsonResponse     
+     */
     #[Route('/meteo', name: 'api_meteo_user_city', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     public function getMeteoForUser(): JsonResponse
