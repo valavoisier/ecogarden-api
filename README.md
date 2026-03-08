@@ -35,7 +35,9 @@ EcoGarden API est une API REST sécurisée construite avec **Symfony 7.4**. Elle
 - LexikJWT Authentication Bundle ^3.2
 - Symfony HTTP Client 7.4
 - API Météo externe : Open-Meteo (gratuite, sans clé)
-- Caching : Symfony Cache (PSR-6) pour les données météo (1 heure par ville)
+- Caching : Symfony Cache (PSR-6/TagAwareCache)
+  - Données météo : 1 heure par ville
+  - Conseils jardinage : 24 heures, invalidation automatique sur écriture
 
 ## Prérequis
 
@@ -141,22 +143,24 @@ Content-Type: application/json
 
 La documentation complète des endpoints est disponible dans [docs/api.md](docs/api.md).
 
-Endpoints principaux:
-Domaine	    Méthode	    Endpoint	             Description
+Endpoints principaux :
 
-Auth	    POST	    /api/auth	             Obtenir un token JWT
-Users	    POST	    /api/user	             Inscription
-Users	    GET	        /api/user/{id}	         Lecture profil
-Users	    PUT	        /api/user/{id}	         Mise à jour (admin)
-Users	    DELETE	    /api/user/{id}	         Suppression (admin)
-Conseils	GET	        /api/conseils	         Liste des conseils
-Conseils	GET	        /api/conseils/{id}	     Détail d’un conseil
-Conseils	GET	        /api/conseils/{month}	 Conseils filtrés par mois
-Conseils	POST	    /api/conseils	         Création (admin)
-Conseils	PUT	        /api/conseils/{id}	     Modification (admin)
-Conseils	DELETE	    /api/conseils/{id}	     Suppression (admin)
-Météo	    GET	        /api/meteo/{city}	     Météo d’une ville
-Météo	    GET	        /api/meteo	             Météo de l’utilisateur
+| Domaine   | Méthode | Endpoint                       | Rôle requis  | Description                        |
+|-----------|---------|--------------------------------|--------------|------------------------------------|
+| Auth      | POST    | `/api/auth`                    | Public       | Obtenir un token JWT               |
+| Users     | POST    | `/api/user`                    | Public       | Inscription                        |
+| Users     | GET     | `/api/users`                   | ROLE_ADMIN   | Liste paginée des utilisateurs     |
+| Users     | PUT     | `/api/user/{id}`               | ROLE_ADMIN   | Mise à jour d'un utilisateur       |
+| Users     | DELETE  | `/api/user/{id}`               | ROLE_ADMIN   | Suppression d'un utilisateur       |
+| Conseils  | GET     | `/api/conseils`                | ROLE_USER    | Liste paginée de tous les conseils |
+| Conseils  | GET     | `/api/conseil`                 | ROLE_USER    | Conseils du mois en cours (paginé) |
+| Conseils  | GET     | `/api/conseil/{mois}`          | ROLE_USER    | Conseils filtrés par mois (paginé) |
+| Conseils  | POST    | `/api/conseil`                 | ROLE_ADMIN   | Création d'un conseil              |
+| Conseils  | PUT     | `/api/conseil/{id}`            | ROLE_ADMIN   | Modification d'un conseil          |
+| Conseils  | DELETE  | `/api/conseil/{id}`            | ROLE_ADMIN   | Suppression d'un conseil           |
+| Conseils  | GET     | `/api/conseils/clearCache`     | ROLE_ADMIN   | Vider le cache manuellement        |
+| Météo     | GET     | `/api/meteo`                   | ROLE_USER    | Météo de la ville de l'utilisateur |
+| Météo     | GET     | `/api/meteo/{city}`            | ROLE_USER    | Météo d'une ville spécifique       |
 
 
 ## Sécurité

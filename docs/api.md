@@ -10,6 +10,7 @@ Base URL : `http://localhost:8000`
   - [Créer un compte](#créer-un-compte)
   - [Se connecter](#se-connecter)
 - [Utilisateurs](#utilisateurs)
+  - [Lister les utilisateurs](#lister-les-utilisateurs)
   - [Modifier un utilisateur](#modifier-un-utilisateur)
   - [Supprimer un utilisateur](#supprimer-un-utilisateur)
 - [Conseils jardin](#conseils-jardin)
@@ -19,6 +20,7 @@ Base URL : `http://localhost:8000`
   - [Créer un conseil](#créer-un-conseil)
   - [Modifier un conseil](#modifier-un-conseil)
   - [Supprimer un conseil](#supprimer-un-conseil)
+  - [Vider le cache](#vider-le-cache)
 - [Météo](#météo)
   - [Météo de la ville de l'utilisateur connecté](#météo-de-la-ville-de-lutilisateur-connecté)
   - [Météo d'une ville spécifique](#météo-dune-ville-spécifique)
@@ -125,6 +127,52 @@ POST /api/auth
 
 ## Utilisateurs
 
+### Lister les utilisateurs
+
+Retourne la liste paginée de tous les utilisateurs.
+
+> **Authentification requise** : `ROLE_ADMIN`
+
+```
+GET /api/users
+```
+
+**Paramètres de requête (optionnels) :**
+
+| Paramètre | Type    | Défaut | Description                        |
+|-----------|---------|--------|------------------------------------|
+| `page`    | integer | 1      | Numéro de page                     |
+| `limit`   | integer | 10     | Nombre d'éléments par page         |
+
+**Exemple :**
+
+```
+GET /api/users?page=1&limit=10
+```
+
+**Réponse — 200 OK :**
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "email": "user@exemple.fr",
+      "city": "Paris",
+      "roles": ["ROLE_USER"]
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 42,
+    "pages": 5
+  }
+}
+```
+
+---
+
 ### Modifier un utilisateur
 
 Met à jour un utilisateur existant. Seuls les champs fournis sont mis à jour.
@@ -207,7 +255,7 @@ Note : les endpoints utilisent /api/conseils pour les collections et /api/consei
 
 ### Lister tous les conseils
 
-Retourne l'ensemble des conseils jardin.
+Retourne l'ensemble des conseils jardin avec pagination. Les résultats sont mis en cache **24 heures** et invalidés automatiquement à chaque modification.
 
 > **Authentification requise** : `ROLE_USER`
 
@@ -215,28 +263,49 @@ Retourne l'ensemble des conseils jardin.
 GET /api/conseils
 ```
 
+**Paramètres de requête (optionnels) :**
+
+| Paramètre | Type    | Défaut | Description                        |
+|-----------|---------|--------|------------------------------------|
+| `page`    | integer | 1      | Numéro de page                     |
+| `limit`   | integer | 10     | Nombre d'éléments par page         |
+
+**Exemple :**
+
+```
+GET /api/conseils?page=1&limit=10
+```
+
 **Réponse — 200 OK :**
 
 ```json
-[
-  {
-    "id": 1,
-    "contenu": "Plantez vos tomates après les saints de glace.",
-    "mois": [5, 6]
-  },
-  {
-    "id": 2,
-    "contenu": "Taillez les rosiers avant les premières gelées.",
-    "mois": [10, 11]
+{
+  "data": [
+    {
+      "id": 1,
+      "contenu": "Plantez vos tomates après les saints de glace.",
+      "mois": [5, 6]
+    },
+    {
+      "id": 2,
+      "contenu": "Taillez les rosiers avant les premières gelées.",
+      "mois": [10, 11]
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 42,
+    "pages": 5
   }
-]
+}
 ```
 
 ---
 
 ### Conseils par mois
 
-Retourne les conseils associés à un mois donné.
+Retourne les conseils associés à un mois donné avec pagination. Les résultats sont mis en cache **24 heures** et invalidés automatiquement à chaque modification.
 
 > **Authentification requise** : `ROLE_USER`
 
@@ -246,50 +315,88 @@ GET /api/conseil/{mois}
 
 **Paramètres d'URL :**
 
- `mois`  integer - Numéro du mois (1–12) 
+| Paramètre | Type    | Description                  |
+|-----------|---------|------------------------------|
+| `mois`    | integer | Numéro du mois (1–12)        |
+
+**Paramètres de requête (optionnels) :**
+
+| Paramètre | Type    | Défaut | Description                        |
+|-----------|---------|--------|------------------------------------|
+| `page`    | integer | 1      | Numéro de page                     |
+| `limit`   | integer | 10     | Nombre d'éléments par page         |
 
 **Exemple :**
 
 ```
-GET /api/conseil/5
+GET /api/conseil/5?page=1&limit=10
 ```
 
 **Réponse — 200 OK :**
 
 ```json
-[
-  {
-    "id": 1,
-    "contenu": "Plantez vos tomates après les saints de glace.",
-    "mois": [5, 6]
+{
+  "data": [
+    {
+      "id": 1,
+      "contenu": "Plantez vos tomates après les saints de glace.",
+      "mois": [5, 6]
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 3,
+    "pages": 1
   }
-]
+}
 ```
 
-> Si aucun conseil n'est trouvé pour ce mois, un tableau vide `[]` est retourné.
+> Si aucun conseil n'est trouvé pour ce mois, `data` contient un tableau vide `[]` et `total` vaut `0`.
 
 ---
 
 ### Conseils du mois en cours
 
-Retourne les conseils correspondant au mois actuel du calendrier.
+Retourne les conseils correspondant au mois actuel du calendrier avec pagination. Les résultats sont mis en cache **24 heures** et invalidés automatiquement à chaque modification.
 
 > **Authentification requise** : `ROLE_USER`
 
 ```
-GET /api/conseil/current
+GET /api/conseil
+```
+
+**Paramètres de requête (optionnels) :**
+
+| Paramètre | Type    | Défaut | Description                        |
+|-----------|---------|--------|------------------------------------|
+| `page`    | integer | 1      | Numéro de page                     |
+| `limit`   | integer | 10     | Nombre d'éléments par page         |
+
+**Exemple :**
+
+```
+GET /api/conseil?page=1&limit=10
 ```
 
 **Réponse — 200 OK :**
 
 ```json
-[
-  {
-    "id": 3,
-    "contenu": "Arrosez le matin pour limiter l'évaporation.",
-    "mois": [6, 7, 8]
+{
+  "data": [
+    {
+      "id": 3,
+      "contenu": "Arrosez le matin pour limiter l'évaporation.",
+      "mois": [6, 7, 8]
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 4,
+    "pages": 1
   }
-]
+}
 ```
 
 ---
@@ -391,7 +498,9 @@ DELETE /api/conseil/{id}
 
 **Paramètres d'URL :**
 
- `id`  integer - Identifiant du conseil 
+| Paramètre | Type    | Description              |
+|-----------|---------|--------------------------|
+| `id`      | integer | Identifiant du conseil   |
 
 **Réponse — 204 No Content** (succès, aucun corps de réponse)
 
@@ -401,6 +510,24 @@ DELETE /api/conseil/{id}
 {
   "message": "Conseil non trouvé."
 }
+```
+
+---
+
+### Vider le cache
+
+Invalidation manuelle du cache de tous les conseils. Le cache est normalement invalidé automatiquement à chaque POST, PUT ou DELETE — cette route sert de mécanisme de secours (ex : modification directe en base).
+
+> **Authentification requise** : `ROLE_ADMIN`
+
+```
+GET /api/conseils/clearCache
+```
+
+**Réponse — 200 OK :**
+
+```json
+"Cache vidé"
 ```
 
 ---
