@@ -3,6 +3,7 @@
 namespace App\DataFixtures;
 
 use App\Entity\Conseil;
+use App\Entity\Mois;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
@@ -37,6 +38,17 @@ class AppFixtures extends Fixture
         $userAdmin->setPassword($hashedPassword); 
         $manager->persist($userAdmin);
 
+        // --- MOIS ---       
+        $moisEntities = [];
+
+        for ($i = 1; $i <= 12; $i++) {
+            $mois = new Mois();
+            $mois->setNumero($i);
+            $manager->persist($mois);
+
+            $moisEntities[$i] = $mois;
+        }
+
         // --- CONSEILS --- 
         $conseilsData = [
             ['contenu' => 'Plantez vos bulbes de printemps en terre bien drainée.', 'mois' => [10, 11]],
@@ -69,7 +81,11 @@ class AppFixtures extends Fixture
         foreach ($conseilsData as $data) {
             $conseil = new Conseil();
             $conseil->setContenu($data['contenu']);
-            $conseil->setMois($data['mois']);
+            foreach ($data['mois'] as $numero) {
+                if (isset($moisEntities[$numero])) {
+                    $conseil->addMois($moisEntities[$numero]);
+                }
+            }
             $manager->persist($conseil);
         }
         
