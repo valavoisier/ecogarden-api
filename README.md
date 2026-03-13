@@ -158,7 +158,7 @@ Endpoints principaux :
 | Conseils  | POST    | `/api/conseil`                 | ROLE_ADMIN   | Création d'un conseil              |
 | Conseils  | PUT     | `/api/conseil/{id}`            | ROLE_ADMIN   | Modification d'un conseil          |
 | Conseils  | DELETE  | `/api/conseil/{id}`            | ROLE_ADMIN   | Suppression d'un conseil           |
-| Conseils  | GET     | `/api/conseils/clearCache`     | ROLE_ADMIN   | Vider le cache manuellement        |
+| Conseils  | DELETE  | `/api/conseils/cache`          | ROLE_ADMIN   | Vider le cache manuellement        |
 | Météo     | GET     | `/api/meteo`                   | ROLE_USER    | Météo de la ville de l'utilisateur |
 | Météo     | GET     | `/api/meteo/{city}`            | ROLE_USER    | Météo d'une ville spécifique       |
 

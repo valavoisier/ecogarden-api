@@ -521,14 +521,10 @@ Invalidation manuelle du cache de tous les conseils. Le cache est normalement in
 > **Authentification requise** : `ROLE_ADMIN`
 
 ```
-GET /api/conseils/clearCache
+DELETE /api/conseils/cache
 ```
 
-**Réponse — 200 OK :**
-
-```json
-"Cache vidé"
-```
+**Réponse — 204 No Content** *(aucun corps)*
 
 ---
 

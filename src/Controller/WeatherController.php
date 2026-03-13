@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Service\OpenMeteoService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -53,25 +54,8 @@ final class WeatherController extends AbstractController
     #[IsGranted('ROLE_USER')]
     public function getMeteoForCity(?string $city): JsonResponse
     {
-        try {
-            $meteo = $this->openMeteo->getMeteo($city);
-            return new JsonResponse($meteo, Response::HTTP_OK);
-
-        } catch (\RuntimeException $e) {
-            // Ville introuvable
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
-
-        } catch (\InvalidArgumentException $e) {
-            // Ville vide ou invalide
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-
-        } catch (\Throwable $e) {
-            // Erreur API Open-Meteo ou autre
-            return new JsonResponse(
-                ['error' => 'Erreur lors de la récupération de la météo.'],
-                Response::HTTP_INTERNAL_SERVER_ERROR
-            );
-        }
+        $meteo = $this->openMeteo->getMeteo($city);
+        return new JsonResponse($meteo, Response::HTTP_OK);
     }
 
     /**
@@ -112,25 +96,11 @@ final class WeatherController extends AbstractController
         $user = $this->getUser();
 
         if (!$user instanceof User || !$user->getCity()) {
-            return new JsonResponse(
-                ['error' => 'Aucune ville définie pour cet utilisateur.'],
-                Response::HTTP_BAD_REQUEST
-            );
+            throw new BadRequestHttpException('Aucune ville définie pour cet utilisateur.');
         }
 
-        try {
-            $meteo = $this->openMeteo->getMeteo($user->getCity());
-            return new JsonResponse($meteo, Response::HTTP_OK);
-
-        } catch (\RuntimeException $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
-
-        } catch (\Throwable $e) {
-            return new JsonResponse(
-                ['error' => 'Erreur lors de la récupération de la météo.'],
-                Response::HTTP_INTERNAL_SERVER_ERROR
-            );
-        }
+        $meteo = $this->openMeteo->getMeteo($user->getCity());
+        return new JsonResponse($meteo, Response::HTTP_OK);
     }
 }
 

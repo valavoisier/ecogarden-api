@@ -23,9 +23,9 @@ final class ConseilController extends AbstractController
     /**
      * Cette méthode permet de récupérer l'ensemble des conseils de jardinage (route non demandée dans spécifications techniques, elle est optionnelle!)
      *  
-     * Méthode : GET  
+     * Méthode : DELETE
      * URL     : /api/conseils  
-     * Rôle    : ROLE_USER
+     * Rôle    : ROLE_ADMIN
      *
      * * Paramètres :
      * - page  : numéro de page (défaut : 1)
@@ -52,6 +52,7 @@ final class ConseilController extends AbstractController
      * @return JsonResponse 
      */
     #[Route('/api/conseils', name: 'conseil', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour accéder à cette ressource')]  
     public function getAllConseils(ConseilRepository $conseilRepository, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
     {
         $page  = $request->query->getInt('page', 1);
@@ -85,7 +86,7 @@ final class ConseilController extends AbstractController
     /** 
      *  Cette méthode permet de récupérer les conseils d’un mois donné (1–12)
      * 
-     * Méthode : GET  
+     * Méthode : DELETE
      * URL     : /api/conseil/{mois}  
      * Rôle    : ROLE_USER
      *
@@ -140,7 +141,7 @@ final class ConseilController extends AbstractController
     /** 
      *  Cette méthode permet de récupérer les conseils du mois en cours
      * 
-     * Méthode : GET  
+     * Méthode : DELETE
      * URL     : /api/conseil 
      * Rôle    : ROLE_USER
      *
@@ -366,28 +367,26 @@ final class ConseilController extends AbstractController
     }
 
     /**
-     * Cette méthode permet de vider manuellement le cache des conseils.
-     * Utile pour le développement ou l’administration.
+     * Vide manuellement le cache des conseils (administration).
+     * Le cache est normalement invalidé automatiquement à chaque POST, PUT ou DELETE.
+     * Cette route sert de mécanisme de secours (ex : modification directe en base).
      *
-     * Méthode : GET  
-     * URL     : /api/conseils/clearCache  
+     * Méthode : DELETE
+     * URL     : /api/conseils/cache
      * Rôle    : ROLE_ADMIN
      *
-     * Exemple de réponse :
-     * "Cache vidé"
-     *
      * Codes de réponse :
-     * - 200 : Succès
+     * - 204 : Cache invalidé avec succès (aucun contenu)
      *
-     * @param TagAwareCacheInterface $cache
+     * @param TagAwareCacheInterface $cachePool
      * @return JsonResponse
      */
-    #[Route('/api/conseils/clearCache', name: 'conseil_clear_cache', methods: ['GET'])]
+    #[Route('/api/conseils/cache', name: 'conseil_clear_cache', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour vider le cache')]
     public function clearCache(TagAwareCacheInterface $cachePool): JsonResponse
     {
         $cachePool->invalidateTags(['conseilsCache']);
 
-        return new JsonResponse('Cache vidé', Response::HTTP_OK);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -29,7 +31,7 @@ class OpenMeteoService
         $normalizedCity = mb_strtolower(trim($city));
 
         if ($normalizedCity === '') {
-            throw new \InvalidArgumentException('La ville est obligatoire.');
+            throw new BadRequestHttpException('La ville est obligatoire.');
         }
 
         // On génère une clé de cache unique pour chaque ville
@@ -56,7 +58,7 @@ class OpenMeteoService
             $geo = $geoResponse->toArray(false); // false pour ne pas lever d'exception en cas de code HTTP 4xx ou 5xx
 
             if (empty($geo['results'])) {
-                throw new \RuntimeException("Ville introuvable : $city");
+                throw new NotFoundHttpException("Ville introuvable : $city");
             }
 
             // On prend les coordonnées du premier résultat

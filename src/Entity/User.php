@@ -21,6 +21,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
+    // Assert\Sequentially utilisé pour éviter les erreurs redondantes (valider dans l'ordre présence puis validité de l'email)
     #[Assert\Sequentially([
         new Assert\NotBlank(message: "L'email est obligatoire."),
         new Assert\Email(message: "L'email n'est pas valide."),
