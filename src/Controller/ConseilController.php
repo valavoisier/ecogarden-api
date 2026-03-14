@@ -59,9 +59,18 @@ final class ConseilController extends AbstractController
         $result  = $cachePool->get($idCache, function (ItemInterface $item) use ($conseilRepository, $mois, $page, $limit) {
             $item->tag(['conseilsCache', "conseilsCache-month-{$mois}"]);
             $item->expiresAfter(86400);
+            // On convertit en tableaux scalaires avant la mise en cache :
+            // les entités Doctrine contiennent des proxies lazy qui perdent
+            // leur EntityManager après désérialisation, causant des erreurs 500
+            // et des collections vides au retour du cache.
+            $conseils = $conseilRepository->findByMonthPaginated($mois, $page, $limit);
             return [
-                'conseils' => $conseilRepository->findByMonthPaginated($mois, $page, $limit),
-                'total'    => $conseilRepository->countByMonth($mois),
+                'conseils' => array_map(fn($c) => [
+                    'id'      => $c->getId(),
+                    'contenu' => $c->getContenu(),
+                    'mois'    => $c->getMois()->map(fn($m) => $m->getNumero())->toArray(),
+                ], $conseils),
+                'total' => $conseilRepository->countByMonth($mois),
             ];
         });
 
@@ -108,9 +117,14 @@ final class ConseilController extends AbstractController
         $result  = $cachePool->get($idCache, function (ItemInterface $item) use ($conseilRepository, $mois, $page, $limit) {
             $item->tag(['conseilsCache', "conseilsCache-month-{$mois}"]);
             $item->expiresAfter(86400);
+            $conseils = $conseilRepository->findByMonthPaginated($mois, $page, $limit);
             return [
-                'conseils' => $conseilRepository->findByMonthPaginated($mois, $page, $limit),
-                'total'    => $conseilRepository->countByMonth($mois),
+                'conseils' => array_map(fn($c) => [
+                    'id'      => $c->getId(),
+                    'contenu' => $c->getContenu(),
+                    'mois'    => $c->getMois()->map(fn($m) => $m->getNumero())->toArray(),
+                ], $conseils),
+                'total' => $conseilRepository->countByMonth($mois),
             ];
         });
         //accès aux clés du tableau $result pour construire la réponse JSON avec la liste des conseils et le nombre total pour calculer les pages
@@ -194,8 +208,12 @@ final class ConseilController extends AbstractController
         // Invalidation du cache après création
         $cachePool->invalidateTags(['conseilsCache']);
 
-        // Retourne l'objet créé avec un statut 201 
-        return $this->json($conseil, Response::HTTP_CREATED);
+        // Retourne l'objet créé avec un statut 201 (tableaux scalaires pour éviter les proxies Doctrine)
+        return $this->json([
+            'id'      => $conseil->getId(),
+            'contenu' => $conseil->getContenu(),
+            'mois'    => $conseil->getMois()->map(fn($m) => $m->getNumero())->toArray(),
+        ], Response::HTTP_CREATED);
     }
 
     /**
@@ -254,8 +272,10 @@ final class ConseilController extends AbstractController
             if (!is_array($data['mois'])) {
                 throw new BadRequestHttpException('Le champ mois doit être un tableau d\'entiers.');
             }
-            // On remplace complètement les mois
-            $conseil->getMois()->clear();
+            // On remplace complètement les mois (removeMois synchronise aussi le côté inverse Mois::$conseils)
+            foreach ($conseil->getMois()->toArray() as $ancienMois) {
+                $conseil->removeMois($ancienMois);
+            }
 
             foreach ($data['mois'] as $moisId) {
                 $mois = $moisRepository->findOneBy(['numero' => (int) $moisId]);

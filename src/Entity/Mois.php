@@ -23,7 +23,13 @@ class Mois
 
     /**
      * @var Collection<int, Conseil>
-     */
+        *
+        * Côté inverse d'une relation ManyToMany : la propriété propriétaire
+        * est Conseil::$mois (définie avec inversedBy: 'conseils').
+        * Seules les modifications effectuées sur le côté propriétaire sont persistées
+        * par Doctrine lors du flush(). Les helpers addConseil() / addMois()
+        * synchronisent les deux côtés pour éviter les incohérences en mémoire (ORM).
+        */
     #[ORM\ManyToMany(targetEntity: Conseil::class, mappedBy: 'mois')]
     private Collection $conseils;
 

@@ -37,15 +37,36 @@ class ConseilRepository extends ServiceEntityRepository
     {
         $offset = ($page - 1) * $limit;
 
-         return $this->createQueryBuilder('c')
-        ->join('c.mois', 'm')
-        ->andWhere('m.numero = :numero')
-        ->setParameter('numero', $moisNumero)
-        ->setFirstResult($offset)
-        ->setMaxResults($limit)
-        ->orderBy('c.id', 'ASC')
-        ->getQuery()
-        ->getResult();
+        $offset = ($page - 1) * $limit;
+
+        // Fetch join sur les mois pour charger toutes les collections en une requête
+        // et éviter les N+1 queries (une requête SQL par conseil pour charger ses mois).
+        // Note : le fetch join peut produire plus de lignes que prévu avec setMaxResults,
+        // c'est pourquoi on filtre d'abord les IDs puis on recharge avec le join.
+        $ids = $this->createQueryBuilder('c')
+            ->select('c.id')
+            ->join('c.mois', 'm')
+            ->andWhere('m.numero = :numero')
+            ->setParameter('numero', $moisNumero)
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->orderBy('c.id', 'ASC')
+            ->getQuery()
+            ->getSingleColumnResult();
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        // Recharge avec TOUS leurs mois (sans filtre) pour que getMois() soit complet
+        return $this->createQueryBuilder('c')
+            ->leftJoin('c.mois', 'm')
+            ->addSelect('m')
+            ->andWhere('c.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->orderBy('c.id', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 
     /**

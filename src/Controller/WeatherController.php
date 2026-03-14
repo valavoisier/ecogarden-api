@@ -30,14 +30,14 @@ final class WeatherController extends AbstractController
      *
      * Exemple de réponse :
      * {
-     *   "temp": 18.5,
-     *   "humidity": 62,
+     *   "temperature": 18.5,
+     *   "humidite": 62,
      *   "precipitation": 0.0,
-     *   "wind": 12.3,
-     *   "sunrise": "06:47",
-     *   "sunset": "21:12",
-     *   "label": "soleil",
-     *   "city": "Paris"
+     *   "vent": 12.3,
+     *   "lever_soleil": "06:47",
+     *   "coucher_soleil": "21:12",
+     *   "conditions": "soleil",
+     *   "ville": "Paris"
      * }
      *
      * Codes de réponse :
@@ -70,14 +70,14 @@ final class WeatherController extends AbstractController
      *
      * Exemple de réponse :
      * {
-     *   "temp": 18.5,
-     *   "humidity": 62,
+     *   "temperature": 18.5,
+     *   "humidite": 62,
      *   "precipitation": 0.0,
-     *   "wind": 12.3,
-     *   "sunrise": "06:47",
-     *   "sunset": "21:12",
-     *   "label": "soleil",
-     *   "city": "Paris"
+     *   "vent": 12.3,
+     *   "lever_soleil": "06:47",
+     *   "coucher_soleil": "21:12",
+     *   "conditions": "soleil",
+     *   "ville": "Paris"
      * }
      *
      * Codes de réponse :
