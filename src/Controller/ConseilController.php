@@ -19,70 +19,7 @@ use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 final class ConseilController extends AbstractController
-{
-    /**
-     * Cette méthode permet de récupérer l'ensemble des conseils de jardinage (route non demandée dans spécifications techniques, elle est optionnelle!)
-     *  
-     * Méthode : DELETE
-     * URL     : /api/conseils  
-     * Rôle    : ROLE_ADMIN
-     *
-     * * Paramètres :
-     * - page  : numéro de page (défaut : 1)
-     * - limit : nombre d’éléments par page (défaut : 10)
-     * 
-     * Exemple de requête :
-     * GET /api/conseils?page=2&limit=10
-     * 
-     * Exemple de réponse :
-     * {
-     *    "data": [
-     *      {
-     *          "id": 1,
-     *          "contenu": "Plantez vos tomates après les saints de glace.",
-     *          "mois": [5, 6]
-     *      }
-     *     ],                               
-     *     "pagination": { "page": 2, "limit": 10, "total": 42, "pages": 5 }   
-     * }
-     * 
-     * Codes de réponse :
-     * - 200 : Succès
-     * 
-     * @return JsonResponse 
-     */
-    #[Route('/api/conseils', name: 'conseil', methods: ['GET'])]
-    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour accéder à cette ressource')]  
-    public function getAllConseils(ConseilRepository $conseilRepository, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
-    {
-        $page  = $request->query->getInt('page', 1);
-        $limit = $request->query->getInt('limit', 10);
-
-        $idCache = "getAllConseils-" . $page . "-" . $limit;
-        $result  = $cachePool->get($idCache, function (ItemInterface $item) use ($conseilRepository, $page, $limit) {
-            //tag générique pour tous les conseils, permet d'invalider tout le cache lié aux conseils en cas de création, mise à jour ou suppression
-            $item->tag('conseilsCache');
-            //echo ("l'élément n'est pas encore en cache");
-            //24h de cache pour éviter de surcharger la base de données, les conseils ne changent pas tous les jours
-            $item->expiresAfter(86400);
-            //accès aux méthodes du repository pour récupérer les conseils paginés et le nombre total pour construire les métadonnées de pagination 
-            return [
-                'conseils' => $conseilRepository->findAllPaginated($page, $limit),
-                'total'    => $conseilRepository->countAll(),
-            ];
-        });
-        //accès aux clés du tableau $result pour construire la réponse JSON avec la liste des conseils et le nombre total pour calculer les pages
-        return $this->json([
-            'data'       => $result['conseils'],
-            'pagination' => [
-                'page'  => $page,
-                'limit' => $limit,
-                'total' => $result['total'],
-                'pages' => (int) ceil($result['total'] / $limit),
-            ],
-        ]);
-    }
-
+{    
     /** 
      *  Cette méthode permet de récupérer les conseils d’un mois donné (1–12)
      * 

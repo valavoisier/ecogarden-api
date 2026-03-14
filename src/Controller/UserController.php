@@ -238,43 +238,5 @@ final class UserController extends AbstractController
         $entityManager->flush();
 
         return $this->json(['message' => 'Utilisateur supprimé avec succès.'], Response::HTTP_OK);
-    }
-    /**
-     * Cette méthode permet de récupérer la liste paginée des utilisateurs (elle est optionnelle!!!)
-     *
-     * Méthode : GET
-     * URL     : /api/users
-     * Accès   : ROLE_ADMIN
-     *
-     * Paramètres de requête :
-     * - page  : numéro de page (défaut : 1)
-     * - limit : nombre d'éléments par page (défaut : 10, max : 50)
-     *
-     * Codes de réponse :
-     * - 200 : Succès
-     * - 403 : Accès refusé
-     *
-     * @return JsonResponse
-     */
-    #[Route('/api/users', name: 'user_list', methods: ['GET'])]
-    #[IsGranted('ROLE_ADMIN')]
-    public function getUsers(UserRepository $userRepository, Request $request): JsonResponse
-    {
-        $page  = $request->query->getInt('page', 1);
-        $limit = $request->query->getInt('limit', 10);
-
-        $users = $userRepository->findAllPaginated($page, $limit);
-        $total = $userRepository->countAll();
-
-        return $this->json([
-            'data'       => $users,
-            'pagination' => [
-                'page'  => $page,
-                'limit' => $limit,
-                'total' => $total,
-                'pages' => (int) ceil($total / $limit),
-            ],
-        ]);
-    }
-
+    }   
 }
