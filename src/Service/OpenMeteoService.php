@@ -89,14 +89,14 @@ class OpenMeteoService
 
             // 3) On renvoie un tableau propre, prêt à être retourné en JSON par l'API avec [0] → maintenant
             return [
-                'temp'          => $weather['current_weather']['temperature'],
-                'humidity'      => $weather['hourly']['relativehumidity_2m'][0],
+                'temperature'          => $weather['current_weather']['temperature'],
+                'humidite'      => $weather['hourly']['relativehumidity_2m'][0],
                 'precipitation' => $weather['hourly']['precipitation'][0],
-                'wind'          => $weather['current_weather']['windspeed'],
-                'sunrise'       => $sunrise,
-                'sunset'        => $sunset,
-                'label'         => $this->getLabel($code),
-                'city'          => $city, 
+                'vent'          => $weather['current_weather']['windspeed'],
+                'leve_soleil'       => $sunrise,
+                'couche_soleil'        => $sunset,
+                'conditions'         => $this->getLabel($code),
+                'ville'          => $city, 
             ];
         });
     }

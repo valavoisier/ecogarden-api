@@ -470,7 +470,7 @@ Invalidation manuelle du cache de tous les conseils. Le cache est normalement in
 > **Authentification requise** : `ROLE_ADMIN`
 
 ```
-DELETE /api/conseils/cache
+DELETE /api/conseil/cache
 ```
 
 **Réponse — 204 No Content** *(aucun corps)*
@@ -495,14 +495,14 @@ GET /api/meteo
 
 ```json
 {
-  "temp": 18.5,
-  "humidity": 62,
+  "temperature": 18.5,
+  "humidite": 62,
   "precipitation": 0.0,
-  "wind": 12.3,
-  "sunrise": "06:47",
-  "sunset": "21:12",
-  "label": "soleil",
-  "city": "Paris"
+  "vent": 12.3,
+  "leve_soleil": "06:47",
+  "couche_soleil": "21:12",
+  "conditions": "soleil",
+  "ville": "Paris"
 }
 ```
 
@@ -510,20 +510,32 @@ GET /api/meteo
 
 Champ              Type      Description 
 
-- `temp`           float     Température actuelle en °C 
-- `humidity`       integer   Humidité relative (%) 
+- `temperature`   float     Température actuelle en °C 
+- `humidite`      integer   Humidité relative (%) 
 - `precipitation`  float     Précipitations en mm 
-- `wind`           float     Vitesse du vent en km/h 
-- `sunrise`        string    Heure de lever du soleil (HH:mm) 
-- `sunset`         string    Heure de coucher du soleil (HH:mm) 
-- `label`          string    Condition météo (`soleil`, `nuageux`, `couvert`, `pluie`, `verglas`, `neige`) 
-- `city`           string    Nom de la ville 
+- `vent`           float     Vitesse du vent en km/h 
+- `leve_soleil`        string    Heure de lever du soleil (HH:mm) 
+- `couche_soleil`         string    Heure de coucher du soleil (HH:mm) 
+- `conditions`          string    Condition météo (`soleil`, `nuageux`, `couvert`, `pluie`, `verglas`, `neige`) 
+- `ville`           string    Nom de la ville 
 
-**Réponse — 400 Bad Request** (aucune ville définie sur le compte) :
+Comportement détaillé :
+
+- Si la requête n'indique pas explicitement une ville, la ville associée au compte utilisateur connecté est utilisée.
+- Si l'utilisateur n'a **pas** de ville enregistrée (cas exceptionnel, p.ex. suppression directe en base), la route renvoie **400 Bad Request** avec le message :
 
 ```json
 {
   "error": "Aucune ville définie pour cet utilisateur."
+}
+```
+
+- Lors du géocodage via l'API Open‑Meteo, si plusieurs résultats sont retournés pour un même nom de ville, l'application **prend le premier résultat**.
+- Si l'API Open‑Meteo ne trouve aucune correspondance pour la ville (géocodage vide), l'API renvoie **404 Not Found** avec un message de type :
+
+```json
+{
+  "error": "Ville introuvable : VilleInconnue"
 }
 ```
 
@@ -553,14 +565,14 @@ GET /api/meteo/Bordeaux
 
 ```json
 {
-  "temp": 22.1,
-  "humidity": 55,
+  "temperature": 22.1,
+  "humidite": 55,
   "precipitation": 0.0,
-  "wind": 8.7,
-  "sunrise": "06:52",
-  "sunset": "21:18",
-  "label": "soleil",
-  "city": "Bordeaux"
+  "vent": 8.7,
+  "leve_soleil": "06:52",
+  "couche_soleil": "21:18",
+  "conditions": "soleil",
+  "ville": "Bordeaux"
 }
 ```
 
