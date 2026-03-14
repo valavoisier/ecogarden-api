@@ -6,6 +6,7 @@ use App\Repository\MoisRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MoisRepository::class)]
 class Mois
@@ -16,6 +17,8 @@ class Mois
     private ?int $id = null;
 
     #[ORM\Column]
+    #[Assert\NotNull(message: 'Le numéro de mois est obligatoire.')]
+    #[Assert\Range(min: 1, max: 12, notInRangeMessage: 'Le numéro de mois doit être compris entre 1 et 12.')]
     private ?int $numero = null;
 
     /**

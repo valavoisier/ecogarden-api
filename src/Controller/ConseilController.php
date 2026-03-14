@@ -52,8 +52,8 @@ final class ConseilController extends AbstractController
     #[Route('/api/conseil/{mois}', name: 'conseil_by_month', methods: ['GET'], requirements: ['mois' => '[1-9]|1[0-2]'])] 
     public function getConseilsByMonth(int $mois, ConseilRepository $conseilRepository, Request $request, TagAwareCacheInterface $cachePool): JsonResponse 
     { 
-        $page  = $request->query->getInt('page', 1);
-        $limit = $request->query->getInt('limit', 10);
+        $page  = max(1, $request->query->getInt('page', 1));
+        $limit = max(1, $request->query->getInt('limit', 10));
 
         $idCache = "getConseilsByMonth-" . $mois . "-" . $page . "-" . $limit;
         $result  = $cachePool->get($idCache, function (ItemInterface $item) use ($conseilRepository, $mois, $page, $limit) {
@@ -101,8 +101,8 @@ final class ConseilController extends AbstractController
     public function getConseilsCurrentMonth(ConseilRepository $conseilRepository, Request $request, TagAwareCacheInterface $cachePool): JsonResponse 
     { 
         $mois  = (int) date('n');
-        $page  = $request->query->getInt('page', 1);
-        $limit = $request->query->getInt('limit', 10);
+        $page  = max(1, $request->query->getInt('page', 1));
+        $limit = max(1, $request->query->getInt('limit', 10));
 
         $idCache = "getConseilsCurrentMonth-" . $mois . "-" . $page . "-" . $limit; //cache distinctif pour chaque mois et page, évite problème de cache non expiré au changement de mois
         $result  = $cachePool->get($idCache, function (ItemInterface $item) use ($conseilRepository, $mois, $page, $limit) {
@@ -169,9 +169,9 @@ final class ConseilController extends AbstractController
         // Création de l'entité 
         $conseil = new Conseil(); 
         $conseil->setContenu($data['contenu'] ?? '');
-        $moisIds = $data['mois'] ?? [];
+        $moisIds = isset($data['mois']) && is_array($data['mois']) ? $data['mois'] : [];
         foreach ($moisIds as $moisId) {
-            $mois = $moisRepository->find($moisId);
+            $mois = $moisRepository->findOneBy(['numero' => (int) $moisId]);
             if ($mois) {
                 $conseil->addMois($mois);
             }
@@ -251,11 +251,14 @@ final class ConseilController extends AbstractController
         // Mise à jour des champs
         $conseil->setContenu($data['contenu'] ?? $conseil->getContenu());
         if (array_key_exists('mois', $data)) {
+            if (!is_array($data['mois'])) {
+                throw new BadRequestHttpException('Le champ mois doit être un tableau d\'entiers.');
+            }
             // On remplace complètement les mois
             $conseil->getMois()->clear();
 
             foreach ($data['mois'] as $moisId) {
-                $mois = $moisRepository->find($moisId);
+                $mois = $moisRepository->findOneBy(['numero' => (int) $moisId]);
                 if ($mois) {
                     $conseil->addMois($mois);
                 }

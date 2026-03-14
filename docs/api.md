@@ -14,7 +14,6 @@ Base URL : `http://localhost:8000`
   - [Modifier un utilisateur](#modifier-un-utilisateur)
   - [Supprimer un utilisateur](#supprimer-un-utilisateur)
 - [Conseils jardin](#conseils-jardin)
-  - [Lister tous les conseils](#lister-tous-les-conseils)
   - [Conseils par mois](#conseils-par-mois)
   - [Conseils du mois en cours](#conseils-du-mois-en-cours)
   - [Créer un conseil](#créer-un-conseil)
@@ -250,58 +249,8 @@ DELETE /api/user/{id}
 ---
 
 ## Conseils jardin
-Les conseils jardin sont des recommandations saisonnières associées à un ou plusieurs mois de l’année. Chaque conseil contient un contenu textuel et une liste de mois (1–12) indiquant les périodes de l’année où le conseil est pertinent.
-Note : les endpoints utilisent /api/conseils pour les collections et /api/conseil pour les ressources individuelles.
-
-### Lister tous les conseils
-
-Retourne l'ensemble des conseils jardin avec pagination. Les résultats sont mis en cache **24 heures** et invalidés automatiquement à chaque modification.
-
-> **Authentification requise** : `ROLE_USER`
-
-```
-GET /api/conseils
-```
-
-**Paramètres de requête (optionnels) :**
-
-| Paramètre | Type    | Défaut | Description                        |
-|-----------|---------|--------|------------------------------------|
-| `page`    | integer | 1      | Numéro de page                     |
-| `limit`   | integer | 10     | Nombre d'éléments par page         |
-
-**Exemple :**
-
-```
-GET /api/conseils?page=1&limit=10
-```
-
-**Réponse — 200 OK :**
-
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "contenu": "Plantez vos tomates après les saints de glace.",
-      "mois": [5, 6]
-    },
-    {
-      "id": 2,
-      "contenu": "Taillez les rosiers avant les premières gelées.",
-      "mois": [10, 11]
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 42,
-    "pages": 5
-  }
-}
-```
-
----
+Les conseils jardin sont des recommandations saisonnières associées à un ou plusieurs mois via une relation ManyToMany (`Conseil ↔ Mois`). Chaque conseil contient un contenu textuel et une liste de numéros de mois (1–12) indiquant les périodes pertinentes.
+Note : les endpoints d'écriture utilisent `/api/conseil`, la route de cache utilise `/api/conseils/cache`.
 
 ### Conseils par mois
 

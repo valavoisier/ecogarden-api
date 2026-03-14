@@ -33,14 +33,14 @@ class ConseilRepository extends ServiceEntityRepository
      *
      * @return Conseil[] Liste des conseils pour la page demandée du mois donné
      */
-    public function findByMonthPaginated(int $moisId, int $page = 1, int $limit = 10): array
+    public function findByMonthPaginated(int $moisNumero, int $page = 1, int $limit = 10): array
     {
         $offset = ($page - 1) * $limit;
 
          return $this->createQueryBuilder('c')
         ->join('c.mois', 'm')
-        ->andWhere('m.id = :moisId')
-        ->setParameter('moisId', $moisId)
+        ->andWhere('m.numero = :numero')
+        ->setParameter('numero', $moisNumero)
         ->setFirstResult($offset)
         ->setMaxResults($limit)
         ->orderBy('c.id', 'ASC')
@@ -58,13 +58,13 @@ class ConseilRepository extends ServiceEntityRepository
      *
      * @return int Nombre total de conseils pour ce mois
      */
-    public function countByMonth(int $moisId): int
+    public function countByMonth(int $moisNumero): int
     {
         return (int) $this->createQueryBuilder('c')
         ->select('COUNT(DISTINCT c.id)')
         ->join('c.mois', 'm')
-        ->andWhere('m.id = :moisId')
-        ->setParameter('moisId', $moisId)
+        ->andWhere('m.numero = :numero')
+        ->setParameter('numero', $moisNumero)
         ->getQuery()
         ->getSingleScalarResult();
     }

@@ -21,7 +21,7 @@ API REST pour l'application EcoGarden — une application de jardinage qui fourn
 EcoGarden API est une API REST sécurisée construite avec **Symfony 7.4**. Elle expose trois domaines fonctionnels :
 
 - **Utilisateurs** : inscription, connexion (JWT), gestion des comptes (CRUD: création, lecture, mise à jour, suppression réservées à `ROLE_ADMIN`).
-- **Conseils jardinage** : conseils saisonniers filtrables par mois (1–12) ou par mois en cours (lecture publique, CRUD création, mise à jour, suppression réservées à `ROLE_ADMIN`).
+- **Conseils jardinage** : conseils saisonniers associés à une relation ManyToMany `Conseil ↔ Mois`, filtrables par mois (1–12) ou par mois en cours, CRUD réservé à `ROLE_ADMIN`.
 - **Météo** : données météo en temps réel via l'API [Open-Meteo](https://open-meteo.com), basées sur la ville de l'utilisateur ou une ville passée en paramètre.
 
 
@@ -152,7 +152,6 @@ Endpoints principaux :
 | Users     | GET     | `/api/users`                   | ROLE_ADMIN   | Liste paginée des utilisateurs     |
 | Users     | PUT     | `/api/user/{id}`               | ROLE_ADMIN   | Mise à jour d'un utilisateur       |
 | Users     | DELETE  | `/api/user/{id}`               | ROLE_ADMIN   | Suppression d'un utilisateur       |
-| Conseils  | GET     | `/api/conseils`                | ROLE_USER    | Liste paginée de tous les conseils |
 | Conseils  | GET     | `/api/conseil`                 | ROLE_USER    | Conseils du mois en cours (paginé) |
 | Conseils  | GET     | `/api/conseil/{mois}`          | ROLE_USER    | Conseils filtrés par mois (paginé) |
 | Conseils  | POST    | `/api/conseil`                 | ROLE_ADMIN   | Création d'un conseil              |
@@ -182,10 +181,12 @@ src/
 │   └── WeatherController.php   # Météo via Open-Meteo
 ├── Entity/
 │   ├── User.php
-│   └── Conseil.php
+│   ├── Conseil.php
+│   └── Mois.php                # Entité mois (relation ManyToMany avec Conseil)
 ├── Repository/
 │   ├── UserRepository.php
-│   └── ConseilRepository.php
+│   ├── ConseilRepository.php
+│   └── MoisRepository.php
 ├── Service/
 │   └── OpenMeteoService.php    # Client HTTP Open-Meteo avec cache
 ├── DataFixtures/
