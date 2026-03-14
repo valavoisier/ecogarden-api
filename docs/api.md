@@ -250,7 +250,7 @@ DELETE /api/user/{id}
 
 ## Conseils jardin
 Les conseils jardin sont des recommandations saisonnières associées à un ou plusieurs mois via une relation ManyToMany (`Conseil ↔ Mois`). Chaque conseil contient un contenu textuel et une liste de numéros de mois (1–12) indiquant les périodes pertinentes.
-Note : les endpoints d'écriture utilisent `/api/conseil`, la route de cache utilise `/api/conseils/cache`.
+Note : les endpoints d'écriture utilisent `/api/conseil`, la route de cache utilise `/api/conseil/cache`.
 
 ### Conseils par mois
 

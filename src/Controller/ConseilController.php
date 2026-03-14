@@ -340,7 +340,7 @@ final class ConseilController extends AbstractController
      * @param TagAwareCacheInterface $cachePool
      * @return JsonResponse
      */
-    #[Route('/api/conseils/cache', name: 'conseil_clear_cache', methods: ['DELETE'])]
+    #[Route('/api/conseil/cache', name: 'conseil_clear_cache', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour vider le cache')]
     public function clearCache(TagAwareCacheInterface $cachePool): JsonResponse
     {
