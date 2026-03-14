@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Conseil;
 use App\Repository\ConseilRepository;
+use App\Repository\MoisRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -23,7 +24,7 @@ final class ConseilController extends AbstractController
     /** 
      *  Cette méthode permet de récupérer les conseils d’un mois donné (1–12)
      * 
-     * Méthode : DELETE
+     * Méthode : GET
      * URL     : /api/conseil/{mois}  
      * Rôle    : ROLE_USER
      *
@@ -78,7 +79,7 @@ final class ConseilController extends AbstractController
     /** 
      *  Cette méthode permet de récupérer les conseils du mois en cours
      * 
-     * Méthode : DELETE
+     * Méthode : GET
      * URL     : /api/conseil 
      * Rôle    : ROLE_USER
      *
@@ -157,6 +158,7 @@ final class ConseilController extends AbstractController
         Request $request, 
         EntityManagerInterface $entityManager, 
         ValidatorInterface $validator,
+        MoisRepository $moisRepository,
         TagAwareCacheInterface $cachePool
         ): JsonResponse { 
         // Récupération du JSON envoyé par le client 
@@ -167,7 +169,13 @@ final class ConseilController extends AbstractController
         // Création de l'entité 
         $conseil = new Conseil(); 
         $conseil->setContenu($data['contenu'] ?? '');
-        $conseil->setMois($data['mois'] ?? []); 
+        $moisIds = $data['mois'] ?? [];
+        foreach ($moisIds as $moisId) {
+            $mois = $moisRepository->find($moisId);
+            if ($mois) {
+                $conseil->addMois($mois);
+            }
+        }       
         // Validation 
         $errors = $validator->validate($conseil); 
 
@@ -222,7 +230,8 @@ final class ConseilController extends AbstractController
         Request $request,
         ConseilRepository $conseilRepository,
         EntityManagerInterface $em,
-        ValidatorInterface $validator,
+        ValidatorInterface $validator,     
+        MoisRepository $moisRepository,
         TagAwareCacheInterface $cachePool
     ): JsonResponse {
         // Vérifier si le conseil existe
@@ -241,7 +250,17 @@ final class ConseilController extends AbstractController
 
         // Mise à jour des champs
         $conseil->setContenu($data['contenu'] ?? $conseil->getContenu());
-        $conseil->setMois($data['mois'] ?? $conseil->getMois());
+        if (array_key_exists('mois', $data)) {
+            // On remplace complètement les mois
+            $conseil->getMois()->clear();
+
+            foreach ($data['mois'] as $moisId) {
+                $mois = $moisRepository->find($moisId);
+                if ($mois) {
+                    $conseil->addMois($mois);
+                }
+            }
+        }
 
         // Validation
         $errors = $validator->validate($conseil);
