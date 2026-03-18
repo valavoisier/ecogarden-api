@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -27,7 +28,7 @@ final class ExceptionListener
     {
         $exception = $event->getThrowable();// Récupère l’exception qui a été lancée dans le kernel
         // On délègue la logique de résolution à une méthode dédiée
-        [$statusCode, $data] = $this->resolveException($exception);
+        [$statusCode, $data] = $this->resolveException($exception, $event->getRequest()->getPathInfo(), $event->getRequest()->getMethod());
         // On remplace la réponse HTTP par défaut de Symfony par une réponse JSON propre et uniforme
         $event->setResponse(new JsonResponse($data, $statusCode));
     }
@@ -40,7 +41,7 @@ final class ExceptionListener
      * pour garantir une réponse API cohérente, quel que soit le type d’exception.
      * @return array{int, array<string, mixed>}
      */
-    private function resolveException(\Throwable $exception): array
+    private function resolveException(\Throwable $exception, string $path = '', string $method = ''): array
     {
         // 401 - Non authentifié : (ex : token invalide ou absent)
         if ($exception instanceof AuthenticationException || $exception instanceof UnauthorizedHttpException) {
@@ -64,8 +65,21 @@ final class ExceptionListener
             return [Response::HTTP_UNPROCESSABLE_ENTITY, $body];
         }
 
-        // Autres erreurs HTTP (400, 405, etc.)
-        // HttpExceptionInterface fournit déjà un code HTTP → on le réutilise.
+        // 400 - Paramètre invalide sur GET /api/conseil/{mois}
+        // Quand le client envoie un numéro hors de la plage 1–12, le regex de la route GET
+        // ne correspond pas, mais les routes PUT/DELETE (avec \d+) correspondent → Symfony lève
+        // un 405. On le convertit en 400 (bad request) puisqu'il s'agit bien d'un paramètre invalide.
+        // preg_match pour vérifier que le path correspond à /api/conseil/{mois} avec un numéro (même si invalide)
+        if ($exception instanceof MethodNotAllowedHttpException
+            && $method === 'GET'
+            && preg_match('#^/api/conseil/\d+$#', $path) === 1
+        ) {
+            return [Response::HTTP_BAD_REQUEST, ['error' => 'Le mois doit être compris entre 1 et 12.']];
+        }
+
+        // Pour toutes les erreurs HTTP standard (400, 403, 404, 405...),
+        // on réutilise le code fourni par Symfony et on renvoie un JSON propre.
+        // HttpExceptionInterface fournit le code HTTP et le message d’erreur
         if ($exception instanceof HttpExceptionInterface) {
             return [
                 $exception->getStatusCode(),

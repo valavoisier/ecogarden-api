@@ -9,8 +9,7 @@ Base URL : `http://localhost:8000`
 - [Authentification](#authentification)
   - [Créer un compte](#créer-un-compte)
   - [Se connecter](#se-connecter)
-- [Utilisateurs](#utilisateurs)
-  - [Lister les utilisateurs](#lister-les-utilisateurs)
+- [Utilisateurs](#utilisateurs) 
   - [Modifier un utilisateur](#modifier-un-utilisateur)
   - [Supprimer un utilisateur](#supprimer-un-utilisateur)
 - [Conseils jardin](#conseils-jardin)
@@ -126,51 +125,6 @@ POST /api/auth
 
 ## Utilisateurs
 
-### Lister les utilisateurs
-
-Retourne la liste paginée de tous les utilisateurs.
-
-> **Authentification requise** : `ROLE_ADMIN`
-
-```
-GET /api/users
-```
-
-**Paramètres de requête (optionnels) :**
-
-| Paramètre | Type    | Défaut | Description                        |
-|-----------|---------|--------|------------------------------------|
-| `page`    | integer | 1      | Numéro de page                     |
-| `limit`   | integer | 10     | Nombre d'éléments par page         |
-
-**Exemple :**
-
-```
-GET /api/users?page=1&limit=10
-```
-
-**Réponse — 200 OK :**
-
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "email": "user@exemple.fr",
-      "city": "Paris",
-      "roles": ["ROLE_USER"]
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 42,
-    "pages": 5
-  }
-}
-```
-
----
 
 ### Modifier un utilisateur
 
