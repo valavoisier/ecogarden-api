@@ -49,37 +49,42 @@ final class UserController extends AbstractController
         ValidatorInterface $validator,
         EntityManagerInterface $entityManager
     ): JsonResponse {
+        // Lecture et décodage du JSON envoyé par le client.
+        // Le "true" force un tableau associatif.
         $data = json_decode($request->getContent(), true);
-
+        // Vérification du JSON : si ce n’est pas un tableau → JSON invalide. 
         if (!is_array($data)) {
-            return $this->json(['message' => 'JSON invalide.'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['message' => 'JSON invalide.'], Response::HTTP_BAD_REQUEST);//400 Bad Request
         }
-
+        // Création de l’entité User et hydratation des champs avec les données reçues.
+        // Le "?? ''" évite les erreurs si une clé est absente.
         $user = new User();
-        //hydratation de l'entité User avec les données reçues (en utilisant l'opérateur de coalescence nulle pour éviter les erreurs si une clé est manquante)
         $user->setEmail($data['email'] ?? '');
         $user->setCity($data['city'] ?? '');
         $user->setRoles(['ROLE_USER']);
+        //mot e passe en clair temporairement pour validation des contraintes de l'entité User
         $user->setPassword($data['password'] ?? '');
 
-        // validation de l'entité User, si des erreurs sont présentes, on les retourne dans la réponse avec un code 422 Unprocessable Entity
+        // Validation de l'entité (vérification des contraintes définies dans l'entité User)
         $errors = $validator->validate($user);
-
+        // Si des erreurs existent, on renvoie un tableau "champ => message" error 422.
         if (count($errors) > 0) {
-            $messages = [];
+            $messages = [];//tableau associatif nom du champ => message d'erreur
             foreach ($errors as $error) {
                 $messages[$error->getPropertyPath()] = $error->getMessage();
             }
 
-            return $this->json(['errors' => $messages], Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->json(['errors' => $messages], Response::HTTP_UNPROCESSABLE_ENTITY);//422 Unprocessable Entity
         }
-
+        // Hashage sécurisé du mot de passe avant sauvegarde.
         $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
 
+        // Persistance en base : persist() marque l'entité pour insertion,
+        // flush() exécute réellement les requêtes SQL nécessaires pour enregistrer l'utilisateur.
         $entityManager->persist($user);
         $entityManager->flush();
 
-        return $this->json(['message' => 'Utilisateur créé avec succès.'], Response::HTTP_CREATED);
+        return $this->json(['message' => 'Utilisateur créé avec succès.'], Response::HTTP_CREATED);//201 Created
     }
 
     /**     
@@ -144,32 +149,36 @@ final class UserController extends AbstractController
      * @param int $id
      * @return JsonResponse
      */
-    #[Route('/api/user/{id}', name: 'user_update', methods: ['PUT'])]
+    #[Route('/api/user/{id}', name: 'user_update', methods: ['PUT'], requirements: ['id' => '\d+'])]
+    #[IsGranted('ROLE_ADMIN', message: "Vous n'avez pas les droits suffisants pour mettre à jour un utilisateur")]
     public function updateUser(
         int $id,
         Request $request,
         UserPasswordHasherInterface $passwordHasher,
         ValidatorInterface $validator,
+        UserRepository $userRepository,
         EntityManagerInterface $entityManager
     ): JsonResponse {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
-
-        $user = $entityManager->getRepository(User::class)->find($id);
-
+        // Recherche de l'utilisateur à mettre à jour
+        $user = $userRepository->find($id);
+        // Si aucun utilisateur ne correspond à l'ID → 404.
         if (!$user) {
-            return $this->json(['message' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);
+            return $this->json(['message' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);//404 Not Found
         }
-
+        // Lecture et décodage du JSON envoyé par le client.
+        // Le second paramètre (true) force un tableau associatif.
         $data = json_decode($request->getContent(), true);
-
+        
+        // Vérification du JSON : si ce n’est pas un tableau → JSON invalide.
         if (!is_array($data)) {
-            return $this->json(['message' => 'JSON invalide.'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['message' => 'JSON invalide.'], Response::HTTP_BAD_REQUEST);//400 Bad Request
         }
 
-        $messages = [];
+        $messages = [];//tableau associatif stockage erreurs, champ => message d'erreur de validation
 
-        // Validation et hydratation uniquement des champs présents dans la requête
-        // validateProperty évite de valider le hash bcrypt existant avec les contraintes du mot de passe en clair
+        // Mise à jour uniquement des champs présents dans la requête.
+        // validateProperty() permet de valider un champ isolé
+        // sans valider l'entité complète (et donc sans valider le hash bcrypt existant).
         if (isset($data['email'])) {
             $user->setEmail($data['email']);
             foreach ($validator->validateProperty($user, 'email') as $error) {
@@ -183,20 +192,28 @@ final class UserController extends AbstractController
             }
         }
         if (isset($data['password'])) {
+            // On met temporairement le mot de passe en clair dans l'entité User pour valider les contraintes.
+            // On ne peut pas valider l'entité complète car le mot de passe actuel
+            // est déjà hashé en bcrypt, et valider ce hash provoquerait des erreurs.
             $user->setPassword($data['password']);
+            // Validation uniquement de la propriété "password".
             foreach ($validator->validateProperty($user, 'password') as $error) {
                 $messages[$error->getPropertyPath()] = $error->getMessage();
             }
         }
-
+        // Si des erreurs de validation existent → 422 Unprocessable Entity.
         if (count($messages) > 0) {
-            return $this->json(['errors' => $messages], Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->json(['errors' => $messages], Response::HTTP_UNPROCESSABLE_ENTITY);//422 Unprocessable Entity
         }
 
+        // Si un mot de passe est fourni et validé:
+        // On remplace le mot de passe en clair par un hash sécurisé.
+        // hashPassword() utilise bcrypt par défaut, qui intègre un salt unique et un coût de calcul élevé
         if (isset($data['password'])) {
             $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
         }
 
+        //sauvegarde des modifications en base
         $entityManager->flush();
 
         return $this->json(['message' => 'Utilisateur mis à jour avec succès.'], Response::HTTP_OK);
@@ -221,22 +238,26 @@ final class UserController extends AbstractController
      * @param int $id
      * @return JsonResponse
      */
-    #[Route('/api/user/{id}', name: 'user_delete', methods: ['DELETE'])]
+    #[Route('/api/user/{id}', name: 'user_delete', methods: ['DELETE'], requirements: ['id' => '\d+'])]
+    #[IsGranted('ROLE_ADMIN', message: "Vous n'avez pas les droits suffisants pour supprimer un utilisateur")]
     public function deleteUser(
         int $id,
+        UserRepository $userRepository,
         EntityManagerInterface $entityManager
     ): JsonResponse {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
-
-        $user = $entityManager->getRepository(User::class)->find($id);
-
+        // Recherche de l’utilisateur à supprimer.
+        $user = $userRepository->find($id);
+        // Si aucun utilisateur ne correspond à l’ID → 404 Not Found.
         if (!$user) {
-            return $this->json(['message' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);
+            return $this->json(['message' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);//404 Not Found
         }
 
+        // Suppression de l’entité User.
+        // remove() prépare la suppression de l'utilisateur.
+        // Comme User n'a aucune relation Doctrine, flush() exécute simplement un DELETE sécurisé.
         $entityManager->remove($user);
         $entityManager->flush();
 
-        return $this->json(['message' => 'Utilisateur supprimé avec succès.'], Response::HTTP_OK);
+        return $this->json(['message' => 'Utilisateur supprimé avec succès.'], Response::HTTP_OK);//200 OK
     }   
 }

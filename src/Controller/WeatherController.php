@@ -19,7 +19,7 @@ final class WeatherController extends AbstractController
     ) {}
 
     /** 
-     * Retourne la météo actuelle d'une ville passée dans l'URL.
+     * Retourne la météo actuelle d'une ville passée dans l'URL. 
      *
      * Méthode : GET  
      * URL     : /api/meteo/{city}  
@@ -54,8 +54,14 @@ final class WeatherController extends AbstractController
     #[IsGranted('ROLE_USER')]
     public function getMeteoForCity(?string $city): JsonResponse
     {
+        // Appel au service OpenMeteo pour récupérer les données météo de la ville.
+        // Le service gère :
+        // - la validation du nom de ville
+        // - l'appel HTTP à l'API Open‑Meteo
+        // - la transformation des données brutes en tableau exploitable
         $meteo = $this->openMeteo->getMeteo($city);
-        return new JsonResponse($meteo, Response::HTTP_OK);
+        // Retourne les données météo au format JSON avec un statut HTTP 200.
+        return new JsonResponse($meteo, Response::HTTP_OK);//200 OK
     }
 
     /**
@@ -93,14 +99,21 @@ final class WeatherController extends AbstractController
     #[IsGranted('ROLE_USER')]
     public function getMeteoForUser(): JsonResponse
     {
+        // Récupération de l'utilisateur connecté via le token JWT.
         $user = $this->getUser();
 
+        // Vérifie que l'utilisateur est bien authentifié
+        // et qu'une ville est définie dans son profil.
+        // Sinon → erreur 400 Bad Request.
         if (!$user instanceof User || !$user->getCity()) {
             throw new BadRequestHttpException('Aucune ville définie pour cet utilisateur.');
         }
-
+        // Appel au service OpenMeteo pour récupérer la météo
+        // de la ville enregistrée dans le profil utilisateur.
         $meteo = $this->openMeteo->getMeteo($user->getCity());
-        return new JsonResponse($meteo, Response::HTTP_OK);
+        
+        // Retourne les données météo au format JSON avec un statut HTTP 200.
+        return new JsonResponse($meteo, Response::HTTP_OK);//200 OK
     }
 }
 

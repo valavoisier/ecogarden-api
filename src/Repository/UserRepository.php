@@ -10,6 +10,13 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 
 /**
+ * Repository dédié à l’entité User.
+ *
+ * Ce repository gère :
+ * - la mise à jour automatique du hash de mot de passe (PasswordUpgraderInterface)
+ * - la récupération paginée des utilisateurs
+ * - le comptage total des utilisateurs
+ *
  * @extends ServiceEntityRepository<User>
  */
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
@@ -20,36 +27,28 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
-     * Used to upgrade (rehash) the user's password automatically over time.
+     * Met à jour (rehash) le mot de passe d’un utilisateur lorsque l’algorithme évolue.
+     *
+     * Cette méthode est appelée automatiquement par Symfony lorsque :
+     * - l’algorithme de hash change,
+     * - le coût de calcul augmente,
+     * - ou lorsqu’un rehash est jugé nécessaire.
+     *
+     * @throws UnsupportedUserException Si l’objet fourni n’est pas une instance de User
      */
     public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
     {
+        // Vérifie que l’utilisateur est bien une instance de User.
         if (!$user instanceof User) {
             throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $user::class));
         }
-
+        // Mise à jour du hash du mot de passe.
         $user->setPassword($newHashedPassword);
+        // Persistance et sauvegarde en base de données.
         $this->getEntityManager()->persist($user);
         $this->getEntityManager()->flush();
     }
-
-    public function findAllPaginated(int $page, int $limit): array
-    {
-        $qb = $this->createQueryBuilder('u')
-            ->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit);
-
-        return $qb->getQuery()->getResult();
-    }
-
-    public function countAll(): int
-    {
-        return (int) $this->createQueryBuilder('u')
-            ->select('COUNT(u.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
-    }
-
+    
     //    /**
     //     * @return User[] Returns an array of User objects
     //     */

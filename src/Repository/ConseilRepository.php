@@ -10,9 +10,8 @@ use Doctrine\Persistence\ManagerRegistry;
  * Repository dédié à l’entité Conseil.
  *
  * Ce repository gère :
- * - la récupération paginée de tous les conseils
  * - la récupération paginée des conseils filtrés par mois
- * - le comptage total des conseils (global ou filtré)
+ * - le comptage total des conseils pour un mois donné (utile pour la pagination)
  *
  *  * @extends ServiceEntityRepository<Conseil>
  */
@@ -24,25 +23,43 @@ class ConseilRepository extends ServiceEntityRepository
     }
 
     /**
-     * Méthode qui récupère une liste paginée de conseils pour un mois donné.
+     * Méthode qui récupère une liste paginée de conseils associés à un mois donné.
      *
-     
-     * @param int $mois  Mois (1-12)
-     * @param int $page  Numéro de page (>=1)
-     * @param int $limit Nombre d’éléments par page
+     * 1) On récupère uniquement les IDs des conseils correspondant au mois demandé,
+     *    avec pagination. Cela évite les problèmes liés au fetch join + pagination
+     *    (Doctrine duplique les lignes et fausse les limites).
      *
-     * @return Conseil[] Liste des conseils pour la page demandée du mois donné
+     * 2) Une fois les IDs obtenus, on recharge les entités complètes avec leurs relations
+     *    (ici les mois) via un second QueryBuilder.
+     *
+     * @param int $moisNumero  Numéro du mois (1-12)
+     * @param int $page        Numéro de page (>=1)
+     * @param int $limit       Nombre d’éléments par page
+     *
+     * @return Conseil[] Liste paginée des conseils du mois demandé
      */
     public function findByMonthPaginated(int $moisNumero, int $page = 1, int $limit = 10): array
     {
+        // Calcul de l’offset pour la pagination.
         $offset = ($page - 1) * $limit;
-
-        $offset = ($page - 1) * $limit;
-
-        // Fetch join sur les mois pour charger toutes les collections en une requête
-        // et éviter les N+1 queries (une requête SQL par conseil pour charger ses mois).
-        // Note : le fetch join peut produire plus de lignes que prévu avec setMaxResults,
-        // c'est pourquoi on filtre d'abord les IDs puis on recharge avec le join.
+        
+        // ───────────────────────────────────────────────────────────────
+        // 1) Première requête : récupérer uniquement les IDs paginés
+        // ───────────────────────────────────────────────────────────────
+        //
+        // On ne charge pas encore les entités complètes pour éviter les doublons
+        // causés par les fetch join lorsqu’ils sont combinés avec LIMIT/OFFSET.
+        //
+        // Ligne par ligne :
+        // - createQueryBuilder('c') : construit une requête sur Conseil (alias c)
+        // - select('c.id') : on ne récupère que les IDs
+        // - join('c.mois', 'm') : jointure pour filtrer par mois
+        // - andWhere('m.numero = :numero') : filtre sur le mois demandé
+        // - setParameter('numero', $moisNumero) : paramètre sécurisé
+        // - setFirstResult($offset) : applique l’offset
+        // - setMaxResults($limit) : limite le nombre de résultats
+        // - orderBy('c.id', 'ASC') : tri stable pour la pagination
+        // - getSingleColumnResult() : retourne un tableau simple d’IDs
         $ids = $this->createQueryBuilder('c')
             ->select('c.id')
             ->join('c.mois', 'm')
@@ -54,11 +71,18 @@ class ConseilRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleColumnResult();
 
+        // Si aucun conseil ne correspond → retourne un tableau vide.
         if (empty($ids)) {
             return [];
         }
-
-        // Recharge avec TOUS leurs mois (sans filtre) pour que getMois() soit complet
+        // ───────────────────────────────────────────────────────────────
+        // 2) Deuxième requête : recharger les entités complètes
+        // ───────────────────────────────────────────────────────────────
+        //
+        // Cette fois, on charge les conseils + leurs relations (mois).
+        // - leftJoin : charge tous les mois associés
+        // - addSelect('m') : inclut les données de Mois dans le SELECT
+        // - IN (:ids) : recharge uniquement les conseils trouvés à l’étape 1
         return $this->createQueryBuilder('c')
             ->leftJoin('c.mois', 'm')
             ->addSelect('m')
@@ -81,6 +105,12 @@ class ConseilRepository extends ServiceEntityRepository
      */
     public function countByMonth(int $moisNumero): int
     {
+        // Construction de la requête :
+        // - COUNT(DISTINCT c.id) : évite les doublons si un conseil est lié à plusieurs mois
+        // - join('c.mois', 'm') : jointure pour filtrer par mois
+        // - andWhere('m.numero = :numero') : filtre sur le mois demandé
+        // - setParameter() : paramètre sécurisé (requête préparée)
+        // - getSingleScalarResult() : retourne un entier (le COUNT)
         return (int) $this->createQueryBuilder('c')
         ->select('COUNT(DISTINCT c.id)')
         ->join('c.mois', 'm')

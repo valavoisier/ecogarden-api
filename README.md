@@ -157,7 +157,7 @@ Endpoints principaux :
 | Conseils  | POST    | `/api/conseil`                 | ROLE_ADMIN   | Création d'un conseil              |
 | Conseils  | PUT     | `/api/conseil/{id}`            | ROLE_ADMIN   | Modification d'un conseil          |
 | Conseils  | DELETE  | `/api/conseil/{id}`            | ROLE_ADMIN   | Suppression d'un conseil           |
-| Conseils  | DELETE  | `/api/conseils/cache`          | ROLE_ADMIN   | Vider le cache manuellement        |
+| Conseils  | DELETE  | `/api/conseil/cache`          | ROLE_ADMIN   | Vider le cache manuellement        |
 | Météo     | GET     | `/api/meteo`                   | ROLE_USER    | Météo de la ville de l'utilisateur |
 | Météo     | GET     | `/api/meteo/{city}`            | ROLE_USER    | Météo d'une ville spécifique       |
 
@@ -165,7 +165,7 @@ Endpoints principaux :
 ## Sécurité
 - API 100% stateless
 - Authentification via JWT
-- Rôles utilisateurs (ROLE_USER, ROLE_ADMIN)
+- Rôles utilisateurs (PUBLIC_ACCESS, ROLE_USER, ROLE_ADMIN)
 - Routes protégées via #[IsGranted]
 - Gestion centralisée des erreurs via ExceptionListener
 - Données météo non stockées (appel externe + cache 1h)
