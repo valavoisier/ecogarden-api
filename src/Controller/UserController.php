@@ -258,6 +258,6 @@ final class UserController extends AbstractController
         $entityManager->remove($user);
         $entityManager->flush();
 
-        return $this->json(['message' => "Utilisateur {$user->getId()} supprimé avec succès."], Response::HTTP_OK);//200 OK
+        return $this->json(['message' => "Utilisateur supprimé avec succès."], Response::HTTP_OK);//200 OK
     }   
 }
