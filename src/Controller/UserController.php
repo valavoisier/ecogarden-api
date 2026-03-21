@@ -84,7 +84,7 @@ final class UserController extends AbstractController
         $entityManager->persist($user);
         $entityManager->flush();
 
-        return $this->json(['message' => 'Utilisateur créé avec succès.'], Response::HTTP_CREATED);//201 Created
+        return $this->json(['message' => "Utilisateur {$user->getId()} créé avec succès."], Response::HTTP_CREATED);//201 Created
     }
 
     /**     
@@ -216,7 +216,7 @@ final class UserController extends AbstractController
         //sauvegarde des modifications en base
         $entityManager->flush();
 
-        return $this->json(['message' => 'Utilisateur mis à jour avec succès.'], Response::HTTP_OK);
+        return $this->json(['message' => "Utilisateur {$user->getId()} mis à jour avec succès."], Response::HTTP_OK);
     }
 
     /**
@@ -258,6 +258,6 @@ final class UserController extends AbstractController
         $entityManager->remove($user);
         $entityManager->flush();
 
-        return $this->json(['message' => 'Utilisateur supprimé avec succès.'], Response::HTTP_OK);//200 OK
+        return $this->json(['message' => "Utilisateur {$user->getId()} supprimé avec succès."], Response::HTTP_OK);//200 OK
     }   
 }
